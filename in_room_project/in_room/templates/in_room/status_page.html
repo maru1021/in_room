@@ -107,9 +107,11 @@
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             padding: 8px;
-            text-align: left;
             transition: all 0.3s ease;
             font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .employee-card.in-room {
             border-color: #4CAF50;
@@ -119,15 +121,30 @@
             border-color: #e0e0e0;
             background-color: #fafafa;
         }
+        .employee-left {
+            flex: 1;
+            min-width: 0;
+        }
+        .employee-right {
+            flex: 1;
+            text-align: right;
+            min-width: 0;
+            margin-left: 8px;
+        }
         .employee-name {
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .employee-number {
             font-size: 10px;
             color: #666;
-            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .schedule-text {
             font-size: 10px;
@@ -202,9 +219,13 @@
                 <div class="employees-grid">
                     {% for employee in dept_data.in_room_employees %}
                     <div class="employee-card in-room">
-                        <div class="employee-name">{{ employee.name }}</div>
-                        <div class="employee-number">{{ employee.employee_number }}</div>
-                        <div class="schedule-text">{{ employee.schedule|default:"予定なし" }}</div>
+                        <div class="employee-left">
+                            <div class="employee-name">{{ employee.name }}</div>
+                            <div class="employee-number">{{ employee.phone }}</div>
+                        </div>
+                        <div class="employee-right">
+                            <div class="schedule-text">{{ employee.schedule|default:"予定なし" }}</div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -218,9 +239,13 @@
                 <div class="employees-grid">
                     {% for employee in dept_data.out_room_employees %}
                     <div class="employee-card out-room">
-                        <div class="employee-name">{{ employee.name }}</div>
-                        <div class="employee-number">{{ employee.employee_number }}</div>
-                        <div class="schedule-text">{{ employee.schedule|default:"予定なし" }}</div>
+                        <div class="employee-left">
+                            <div class="employee-name">{{ employee.name }}</div>
+                            <div class="employee-number">{{ employee.phone }}</div>
+                        </div>
+                        <div class="employee-right">
+                            <div class="schedule-text">{{ employee.schedule|default:"予定なし" }}</div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -240,20 +265,11 @@
         {% endfor %}
     </div>
 
-    <button class="refresh-btn" onclick="location.reload()" title="更新">
-        ↻
-    </button>
-
     <script>
         // 30秒ごとに自動更新
         setInterval(function() {
             location.reload();
         }, 30000);
-
-        // ページ読み込み時に現在時刻を表示
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('ページ更新時刻: ' + new Date().toLocaleString());
-        });
     </script>
 </body>
 </html>

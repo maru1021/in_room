@@ -36,6 +36,7 @@ class StatusPageView(TemplateView):
                 'in_room_count': in_room_employees.count(),
                 'total_count': employees.count()
             })
+        print(departments_with_employees)
 
         context['departments_with_employees'] = departments_with_employees
         context['total_in_room'] = Employee.objects.filter(in_room_time__isnull=False).count()
