@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入退室管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: 3px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            font-weight: 600;
+            position: relative;
+            outline: none;
+        }
+        .btn-enter {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-enter:hover:not(.active) {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+        .btn-exit {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-exit:hover:not(.active) {
+            background-color: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+        }
+        .btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8), 0 0 20px rgba(0, 0, 0, 0.3);
+            border-color: #ffffff;
+            z-index: 10;
+        }
+        .btn-enter.active {
+            background-color: #2e7d32;
+            border-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 0 20px rgba(76, 175, 80, 0.5);
+        }
+        .btn-exit.active {
+            background-color: #c62828;
+            border-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 0 20px rgba(244, 67, 54, 0.5);
+        }
+        .btn:not(.active) {
+            opacity: 0.7;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .employee-input {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: block;
+        }
+        .employee-input input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        .employee-input button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .employee-input button:hover {
+            background-color: #0056b3;
+        }
+        .employee-input .cancel-btn {
+            background-color: #6c757d;
+            margin-left: 10px;
+        }
+        .employee-input .cancel-btn:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>入退室管理システム</h1>
+        <p>ボタンをクリックして入室または退室を記録してください。</p>
+
+        <div class="button-group">
+            <button id="enter-btn" class="btn btn-enter" onclick="selectAction('enter')">入室</button>
+            <button id="exit-btn" class="btn btn-exit" onclick="selectAction('exit')">退室</button>
+        </div>
+
+        <div id="employee-input" class="employee-input">
+            <h3 id="action-title">入室または退室を選択してください</h3>
+            <p>上のボタンで入室または退室を選択し、社員証をカードリーダーにかざして社員番号を読み取ってください</p>
+            <input type="text" id="employee-id" placeholder="社員番号" maxlength="10" autofocus>
+            <button id="submit-btn" onclick="submitEntry()" disabled>送信</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // DOM要素をキャッシュ
+        const elements = {
+            actionTitle: document.getElementById('action-title'),
+            submitBtn: document.getElementById('submit-btn'),
+            employeeIdInput: document.getElementById('employee-id'),
+            enterBtn: document.getElementById('enter-btn'),
+            exitBtn: document.getElementById('exit-btn'),
+            statusDiv: document.getElementById('status')
+        };
+
+        const actionConfig = {
+            enter: { title: '入室', activeBtn: 'enterBtn' },
+            exit: { title: '退室', activeBtn: 'exitBtn' }
+        };
+
+        let currentAction = null;
+
+        function selectAction(action) {
+            currentAction = action;
+            const config = actionConfig[action];
+
+            // すべてのボタンのアクティブ状態をリセット
+            elements.enterBtn.classList.remove('active');
+            elements.exitBtn.classList.remove('active');
+
+            // 選択されたボタンをアクティブに
+            elements[config.activeBtn].classList.add('active');
+            elements.actionTitle.textContent = config.title;
+            elements.submitBtn.disabled = false;
+            elements.employeeIdInput.focus();
+        }
+
+        function submitEntry() {
+            const employeeId = elements.employeeIdInput.value.trim();
+
+            if (!currentAction) {
+                alert('入室または退室を選択してください。');
+                return;
+            }
+
+            if (!employeeId) {
+                alert('社員番号を入力してください。');
+                return;
+            }
+
+            recordEntry(currentAction, employeeId);
+        }
+
+        function resetForm() {
+            currentAction = null;
+            elements.employeeIdInput.value = '';
+            elements.submitBtn.disabled = true;
+            elements.actionTitle.textContent = '入室または退室を選択してください';
+            elements.enterBtn.classList.remove('active');
+            elements.exitBtn.classList.remove('active');
+        }
+
+        function clearInputOnly() {
+            elements.employeeIdInput.value = '';
+            elements.employeeIdInput.focus();
+        }
+
+        function showStatus(className, message, duration = 3000) {
+            elements.statusDiv.className = `status ${className}`;
+            elements.statusDiv.textContent = message;
+            elements.statusDiv.style.display = 'block';
+
+            setTimeout(() => {
+                elements.statusDiv.style.display = 'none';
+            }, duration);
+        }
+
+        function clearEmployeeIdAndFocus() {
+            elements.employeeIdInput.value = '';
+            elements.employeeIdInput.focus();
+        }
+
+        function recordEntry(action, employeeId) {
+            fetch('/record_entry/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    action: action,
+                    employee_id: employeeId,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => {
+                return response.json().then(data => ({
+                    ok: response.ok,
+                    status: response.status,
+                    data: data
+                }));
+            })
+            .then(result => {
+                if (result.ok) {
+                    showStatus('success', result.data.message);
+                    clearInputOnly(); // ボタン状態を保持して入力欄のみクリア
+                } else {
+                    showStatus('error', result.data.message || 'エラーが発生しました');
+                    clearEmployeeIdAndFocus();
+                }
+            })
+            .catch(error => {
+                showStatus('error', `ネットワークエラーが発生しました: ${error.message}`, 5000);
+                clearEmployeeIdAndFocus();
+            });
+        }
+
+        // Enterキーで送信
+        elements.employeeIdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitEntry();
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

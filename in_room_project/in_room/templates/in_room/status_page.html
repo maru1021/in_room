@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入退室状況一覧</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            font-size: 14px;
+        }
+        .header {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 24px;
+        }
+        .summary {
+            font-size: 16px;
+            color: #666;
+        }
+        .summary .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .departments-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 60px;
+        }
+        .department {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .department-header {
+            background-color: #2196F3;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .department-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .department-count {
+            font-size: 11px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        .employees-section {
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title.in-room {
+            color: #4CAF50;
+        }
+        .section-title.out-room {
+            color: #757575;
+        }
+        .status-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-icon.in {
+            background-color: #4CAF50;
+        }
+        .status-icon.out {
+            background-color: #757575;
+        }
+        .employees-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .employee-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: left;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+        .employee-card.in-room {
+            border-color: #4CAF50;
+            background-color: #f1f8e9;
+        }
+        .employee-card.out-room {
+            border-color: #e0e0e0;
+            background-color: #fafafa;
+        }
+        .employee-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+        .employee-number {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        .schedule-text {
+            font-size: 10px;
+            color: #888;
+            font-style: italic;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .no-employees {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .refresh-btn:hover {
+            background-color: #1976D2;
+            transform: scale(1.1);
+        }
+        .navigation {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .nav-link {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            background-color: white;
+            color: #2196F3;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 2px solid #2196F3;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        .nav-link:hover {
+            background-color: #2196F3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="departments-container">
+        {% for dept_data in departments_with_employees %}
+        <div class="department">
+            <div class="department-header">
+                <div class="department-name">{{ dept_data.department.name }}</div>
+                <div class="department-count">{{ dept_data.in_room_count }}/{{ dept_data.total_count }}</div>
+            </div>
+
+            <div class="employees-section">
+                {% if dept_data.in_room_employees %}
+                <div class="section-title in-room">
+                    <div class="status-icon in"></div>
+                    入室中 ({{ dept_data.in_room_employees|length }})
+                </div>
+                <div class="employees-grid">
+                    {% for employee in dept_data.in_room_employees %}
+                    <div class="employee-card in-room">
+                        <div class="employee-name">{{ employee.name }}</div>
+                        <div class="employee-number">{{ employee.employee_number }}</div>
+                        <div class="schedule-text">{{ employee.schedule|default:"予定なし" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if dept_data.out_room_employees %}
+                <div class="section-title out-room">
+                    <div class="status-icon out"></div>
+                    退室中 ({{ dept_data.out_room_employees|length }})
+                </div>
+                <div class="employees-grid">
+                    {% for employee in dept_data.out_room_employees %}
+                    <div class="employee-card out-room">
+                        <div class="employee-name">{{ employee.name }}</div>
+                        <div class="employee-number">{{ employee.employee_number }}</div>
+                        <div class="schedule-text">{{ employee.schedule|default:"予定なし" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if not dept_data.in_room_employees and not dept_data.out_room_employees %}
+                <div class="no-employees">従業員なし</div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="department">
+            <div class="employees-section">
+                <div class="no-employees">部署未登録</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <button class="refresh-btn" onclick="location.reload()" title="更新">
+        ↻
+    </button>
+
+    <script>
+        // 30秒ごとに自動更新
+        setInterval(function() {
+            location.reload();
+        }, 30000);
+
+        // ページ読み込み時に現在時刻を表示
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('ページ更新時刻: ' + new Date().toLocaleString());
+        });
+    </script>
+</body>
+</html>
